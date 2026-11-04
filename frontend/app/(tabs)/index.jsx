@@ -18,6 +18,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { TouchableWithoutFeedback } from "react-native";
 
 import { usePantry } from "../../hooks/usePantry";
+import ItemImage from "../../components/ItemImage";
 
 const { width } = Dimensions.get("window");
 const isMobile = width < 600;
@@ -194,12 +195,8 @@ const Index = () => {
     if (isAddingItem) return;
 
     // Validate fields first
-    if (
-      !newItemData.item_name ||
-      !newItemData.item_category ||
-      !newItemData.item_url
-    ) {
-      setError("Please fill in all required fields");
+    if (!newItemData.item_name.trim() || !newItemData.item_category.trim()){
+      setError("Please enter a name and category");
       return;
     }
 
@@ -214,7 +211,11 @@ const Index = () => {
       const newItem = await addItem({
         itemName: newItemData.item_name,
         itemCategory: newItemData.item_category,
-        itemUrl: newItemData.item_url,
+        itemUrl: 
+          newItemData.item_url.trim() ||
+          `https://www.themealdb.com/images/ingredients/${encodeURIComponent(
+            newItemData.item_name.trim().toLowerCase().replace(/\s+/g, "_")
+          )}`,
         quantity: parseInt(newItemData.item_quantity, 10) || 1,
       });
 
@@ -285,7 +286,7 @@ const Index = () => {
                 setIsItemModalVisible(true);
               }}
             >
-              <Image source={{ uri: item.itemUrl }} style={styles.itemImage} />
+              <ItemImage uri={item.itemUrl} name={item.itemName} />
               <TouchableOpacity
                 style={[
                   styles.favoriteIconContainer,
@@ -489,7 +490,7 @@ const Index = () => {
                 />
                 <TextInput
                   style={styles.modalInput}
-                  placeholder="Image URL"
+                  placeholder="Image URL (optional)"
                   value={newItemData.item_url}
                   onChangeText={(text) =>
                     setNewItemData({ ...newItemData, item_url: text })
