@@ -56,6 +56,7 @@ const Index = () => {
 
   const router = useRouter();
   const { fetchItems, addItem, toggleFavorite } = usePantry();
+  const [username, setUsername] = useState("");
 
   const [fontsLoaded] = useFonts({
     Montaga: require("../../assets/fonts/Montaga-Regular.ttf"),
@@ -69,6 +70,7 @@ const Index = () => {
           router.push("/logIn");
           return;
         }
+        setUsername(await AsyncStorage.getItem("username"));
         loadItems();
       } catch (error) {
         console.error("Error checking auth:", error);
@@ -145,6 +147,7 @@ const Index = () => {
   const handleLogout = async () => {
     try {
       await AsyncStorage.removeItem("userId");
+      await AsyncStorage.removeItem("username");
       setIsUserModalVisible(false);
       router.push("/logIn");
     } catch (error) {
@@ -330,7 +333,7 @@ const Index = () => {
           </View>
 
           <View style={styles.titleRow}>
-            <Text style={styles.username}>username</Text>
+            <Text style={styles.username}>{username || "My Pantry"}</Text>
             <View style={styles.userControls}>
               <TouchableOpacity
                 style={styles.addButton}

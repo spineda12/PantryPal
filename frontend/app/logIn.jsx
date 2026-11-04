@@ -56,6 +56,7 @@ const LogIn = () => {
                 // The backend sends back the user's id as plain text, e.g. "7"
                 const userId = (await response.text()).trim();
                 await AsyncStorage.setItem('userId', userId);
+                await AsyncStorage.setItem('username', username);
                 router.replace('/(tabs)');
             } else {
                 setErrorMessage('Wrong username or password.');
