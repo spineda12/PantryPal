@@ -17,6 +17,7 @@ import { useFonts } from "expo-font";
 import { Link } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { findRecipes } from "../../utils/recipeMatching";
 
 const { width } = Dimensions.get("window");
 const isMobile = width < 600;
@@ -27,14 +28,12 @@ const Recipe = () => {
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [onlyMakeable, setOnlyMakeable] = useState(true);
+  const [searchText, setSearchText] = useState("");
 
   const [fontsLoaded] = useFonts({
     Montaga: require("../../assets/fonts/Montaga-Regular.ttf"),
   });
-
-  if (!fontsLoaded) {
-    return null;
-  }
 
   useEffect(() => {
     const fetchUserId = async () => {
@@ -93,26 +92,14 @@ const Recipe = () => {
     };
 
     const fetchRecipes = async (items) => {
-      console.log("Fetching recipes:", items);
-      const allRecipes = [];
-      for (const item of items) {
-        try {
-          const response = await fetch(
-            `https://www.themealdb.com/api/json/v1/1/filter.php?i=${item.name}`
-          );
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-          const data = await response.json();
-          if (data.meals) {
-            allRecipes.push(...data.meals);
-          }
-        } catch (error) {
-          console.error("Error fetching recipes:", error);
-        }
+      try {
+        const names = items.map((item) => item.name).filter(Boolean);
+        const results = await findRecipes(names);
+        setRecipesData(results);
+      } catch (error) {
+        console.error("Error finding recipes:", error);
+        setRecipesData([]);
       }
-      console.log("Fetched recipes:", allRecipes);
-      setRecipesData(allRecipes);
     };
 
     const loadData = async () => {
@@ -127,28 +114,11 @@ const Recipe = () => {
     loadData();
   }, []);
 
-  const fetchMealData = async (idMeal) => {
-    try {
-      const response = await fetch(
-        `https://www.themealdb.com/api/json/v1/1/lookup.php?i=${idMeal}`
-      );
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      return data.meals[0];
-    } catch (error) {
-      console.error("Error fetching ingredients:", error);
-      return null;
-    }
-  };
-
   const renderItem = ({ item }) => (
     <TouchableOpacity 
         style={styles.recipeCard}
-        onPress={async () => {
-            const mealData = await fetchMealData(item.idMeal);
-            setSelectedRecipe(mealData);
+        onPress={() => {
+            setSelectedRecipe(item); // already has the full recipe details
             setModalVisible(true);
         }}
     >
@@ -158,6 +128,16 @@ const Recipe = () => {
             </View>
             <View style={styles.recipeTextContainer}>
                 <Text style={styles.recipeTitle}>{item.strMeal}</Text>
+                <Text style={styles.usesText}>
+                    you have: {item.have.join(", ")}
+                </Text>
+                {item.missing.length ? (
+                    <Text style={styles.missingText}>
+                        missing: {item.missing.join(", ")}
+                    </Text>
+                ) : (
+                    <Text style={styles.readyText}>you have everything!</Text>
+                )}
                 <TouchableOpacity style={styles.viewRecipeButton}>
                     <Text style={styles.viewRecipeText}>View Recipe</Text>
                 </TouchableOpacity>
@@ -165,6 +145,25 @@ const Recipe = () => {
         </View>
     </TouchableOpacity>
 );
+
+  if (!fontsLoaded) {
+    return null;
+  }
+
+  // Which recipes to show
+  const makeable = recipesData.filter((recipe) => recipe.missing.length === 0);
+  const showingClosest = onlyMakeable && makeable.length === 0 && recipesData.length > 0;
+  let displayedRecipes = onlyMakeable
+    ? makeable.length > 0
+      ? makeable
+      : recipesData.slice(0, 20) // nothing fully makeable: show the 20 closest
+    : recipesData;
+  const search = searchText.trim().toLowerCase();
+  if (search) {
+    displayedRecipes = displayedRecipes.filter((recipe) =>
+      recipe.strMeal.toLowerCase().includes(search)
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -208,14 +207,41 @@ const Recipe = () => {
               style={styles.input}
               placeholder="Search for recipes..."
               placeholderTextColor="#BCABAB"
+              value={searchText}
+              onChangeText={setSearchText}
             />
           </View>
         </View>
 
-        {/* Subtitle */}
-        <Text style={styles.subtitle}>
-          recipes based on ingredients in stock
-        </Text>
+        {/* Filter */}
+        <View style={styles.filterRow}>
+          <TouchableOpacity
+            style={[styles.filterChip, onlyMakeable && styles.filterChipActive]}
+            onPress={() => setOnlyMakeable(true)}
+          >
+            <Text style={styles.filterChipText}>
+              can make now ({makeable.length})
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.filterChip, !onlyMakeable && styles.filterChipActive]}
+            onPress={() => setOnlyMakeable(false)}
+          >
+            <Text style={styles.filterChipText}>
+              all matches ({recipesData.length})
+            </Text>
+          </TouchableOpacity>
+        </View>
+        {!loading && recipesData.length === 0 ? (
+          <Text style={styles.subtitle}>
+            add items to your pantry to see recipes
+          </Text>
+        ) : null}
+        {!loading && showingClosest ? (
+          <Text style={styles.subtitle}>
+            nothing uses only what you have yet, so here are the closest matches
+          </Text>
+        ) : null}
         <View style={styles.mainContentContainer}>
           {loading ? (
             <ActivityIndicator size="large" color="#BCABAB" />
@@ -223,7 +249,7 @@ const Recipe = () => {
             <>
               {/* Recipe List */}
               <FlatList
-                data={recipesData}
+                data={displayedRecipes}
                 renderItem={renderItem}
                 keyExtractor={(item) => item.idMeal}
                 contentContainerStyle={styles.recipeList}
@@ -358,141 +384,77 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   subtitle: {
-        fontFamily: 'Montaga',
-        fontSize: 18,
-        color: '#BCABAB',
-        marginBottom: 25,
-        marginTop: 10,
-        opacity: 0.8,
-    },
-    
-    recipeCard: {
-        backgroundColor: '#685858',
-        borderRadius: 25,
-        marginBottom: 15,
-        overflow: 'hidden',
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
-        elevation: 5,
-    },
-    
-    recipeCardContent: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 15,
-    },
-    
-    imageContainer: {
-        marginRight: 20,
-    },
-    
-    thumbnail: {
-        width: 100,
-        height: 100,
-        borderRadius: 20,
-    },
-    
-    recipeTextContainer: {
-        flex: 1,
-        justifyContent: 'space-between',
-        height: 100,
-    },
-    
-    recipeTitle: {
-        fontFamily: 'Montaga',
-        fontSize: 22,
-        color: '#ffffff',
-        marginBottom: 10,
-        flex: 1,
-    },
-    
-    viewRecipeButton: {
-        backgroundColor: '#373030',
-        paddingVertical: 8,
-        paddingHorizontal: 15,
-        borderRadius: 15,
-        alignSelf: 'flex-start',
-    },
-    
-    subtitle: {
-        fontFamily: 'Montaga',
-        fontSize: 18,
-        color: '#BCABAB',
-        marginBottom: 25,
-        marginTop: 10,
-        opacity: 0.8,
-    },
-    
-    recipeCard: {
-        backgroundColor: '#685858',
-        borderRadius: 25,
-        marginBottom: 15,
-        overflow: 'hidden',
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
-        elevation: 5,
-    },
-    
-    recipeCardContent: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 15,
-    },
-    
-    imageContainer: {
-        marginRight: 20,
-    },
-    
-    thumbnail: {
-        width: 100,
-        height: 100,
-        borderRadius: 20,
-    },
-    
-    recipeTextContainer: {
-        flex: 1,
-        justifyContent: 'space-between',
-        height: 100,
-    },
-    
-    recipeTitle: {
-        fontFamily: 'Montaga',
-        fontSize: 22,
-        color: '#ffffff',
-        marginBottom: 10,
-        flex: 1,
-    },
-    
-    viewRecipeButton: {
-        backgroundColor: '#373030',
-        paddingVertical: 8,
-        paddingHorizontal: 15,
-        borderRadius: 15,
-        alignSelf: 'flex-start',
-    },
-    
-    viewRecipeText: {
-        fontFamily: 'Montaga',
-        color: '#BCABAB',
-        fontSize: 14,
-    },
+    fontFamily: "Montaga",
+    fontSize: 18,
+    color: "#BCABAB",
+    marginBottom: 20,
+    marginTop: 5,
+    opacity: 0.8,
+  },
+  recipeList: {
+    paddingBottom: 30,
+  },
+  recipeCard: {
+    backgroundColor: "#685858",
+    borderRadius: 25,
+    marginBottom: 15,
+    overflow: "hidden",
+    boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.25)",
+    elevation: 5,
+  },
+  recipeCardContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 15,
+  },
   imageContainer: {
-    padding: 20,
+    marginRight: 20,
   },
   thumbnail: {
     width: 115,
     height: 115,
     borderRadius: 25,
+  },
+  recipeTextContainer: {
+    flex: 1,
+    justifyContent: "center",
+    minHeight: 115,
+  },
+  recipeTitle: {
+    fontFamily: "Montaga",
+    fontSize: 22,
+    color: "#ffffff",
+    marginBottom: 8,
+  },
+  usesText: {
+    fontFamily: "Montaga",
+    fontSize: 15,
+    color: "#BCABAB",
+    marginBottom: 4,
+  },
+  missingText: {
+    fontFamily: "Montaga",
+    fontSize: 15,
+    color: "#E0A3A3",
+    marginBottom: 10,
+  },
+  readyText: {
+    fontFamily: "Montaga",
+    fontSize: 15,
+    color: "#A8D5A2",
+    marginBottom: 10,
+  },
+  viewRecipeButton: {
+    backgroundColor: "#373030",
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 15,
+    alignSelf: "flex-start",
+  },
+  viewRecipeText: {
+    fontFamily: "Montaga",
+    color: "#BCABAB",
+    fontSize: 14,
   },
   bottomNav: {
     flexDirection: "row",
@@ -584,6 +546,27 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(55, 48, 48, 0.7)",
     borderRadius: 20,
     padding: 5,
+  },
+  filterRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    marginTop: 10,
+    marginBottom: 15,
+  },
+  filterChip: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    backgroundColor: "#373030",
+  },
+  filterChipActive: {
+    backgroundColor: "#685858",
+  },
+  filterChipText: {
+    fontFamily: "Montaga",
+    fontSize: 16,
+    color: "#FFFFFF",
   },
 });
 

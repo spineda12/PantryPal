@@ -15,7 +15,7 @@ import { useFonts } from "expo-font";
 import { Link } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
+import ItemImage from "../../components/ItemImage";
 const { width } = Dimensions.get("window");
 const isMobile = width < 600;
 
@@ -171,7 +171,7 @@ const Favorites = () => {
           <TouchableOpacity style={styles.backButton} onPress={onClose}>
             <Ionicons name="arrow-back" size={24} color="#BCABAB" />
           </TouchableOpacity>
-          <Image source={{ uri: item?.src }} style={styles.modalImage} />
+          <ItemImage uri={item?.src} style={styles.modalImage} />
           <View style={styles.modalInfo}>
             <Text style={styles.modalTitle}>{item?.title}</Text>
             <Text style={styles.modalDetails}>Category: {item?.category}</Text>
@@ -267,7 +267,7 @@ const Favorites = () => {
                       style={styles.imageBackground}
                       onPress={() => openModal(item)}
                     >
-                      <Image source={{ uri: item?.src }} style={styles.image} />
+                      <ItemImage uri={item?.src} name={item?.title} />
                       <TouchableOpacity
                         style={styles.favoriteIconContainer}
                         onPress={(e) => {
@@ -289,7 +289,7 @@ const Favorites = () => {
                       style={styles.imageBackground}
                       onPress={() => openModal(item)}
                     >
-                      <Image source={{ uri: item?.src }} style={styles.image} />
+                      <ItemImage uri={item?.src} name={item?.title} />
                       <TouchableOpacity
                         style={styles.favoriteIconContainer}
                         onPress={(e) => {

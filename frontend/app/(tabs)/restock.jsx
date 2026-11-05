@@ -15,6 +15,7 @@ import { useFonts } from "expo-font";
 import { Link } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import ItemImage from "../../components/ItemImage";
 
 const { width } = Dimensions.get("window");
 const isMobile = width < 600;
@@ -265,7 +266,7 @@ const Restock = () => {
           <TouchableOpacity style={styles.backButton} onPress={onClose}>
             <Ionicons name="arrow-back" size={24} color="#BCABAB" />
           </TouchableOpacity>
-          <Image source={{ uri: item?.src }} style={styles.modalImage} />
+          <ItemImage uri={item?.src} style={styles.modalImage} />
           <View style={styles.modalInfo}>
             <Text style={styles.modalTitle}>{item?.title}</Text>
             <Text style={styles.modalDetails}>Category: {item?.category}</Text>
@@ -394,8 +395,7 @@ const Restock = () => {
                       style={styles.imageBackground}
                       onPress={() => openModal(item)}
                     >
-                      <Image source={{ uri: item?.src }} style={styles.image} />
-                      <Text style={styles.quantityText}>{item?.quantity}</Text>
+                      <ItemImage uri={item?.src} name={`${item?.title ?? ""} × ${item?.quantity}`} />
                       <TouchableOpacity
                         style={[
                           styles.favoriteIconContainer,
@@ -424,8 +424,7 @@ const Restock = () => {
                       style={styles.imageBackground}
                       onPress={() => openModal(item)}
                     >
-                      <Image source={{ uri: item?.src }} style={styles.image} />
-                      <Text style={styles.quantityText}>{item?.quantity}</Text>
+                      <ItemImage uri={item?.src} name={`${item?.title ?? ""} × ${item?.quantity}`} />
                       <TouchableOpacity
                           style={[
                             styles.favoriteIconContainer,
