@@ -11,6 +11,8 @@ import {
   TouchableOpacity,
   Modal,
   Image,
+  Alert,
+  Platform,
 } from "react-native";
 import { useFonts } from "expo-font";
 import { Link, useRouter } from "expo-router";
@@ -54,10 +56,10 @@ const Index = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [username, setUsername] = useState("");
 
   const router = useRouter();
   const { fetchItems, addItem, toggleFavorite } = usePantry();
-  const [username, setUsername] = useState("");
 
   const [fontsLoaded] = useFonts({
     Montaga: require("../../assets/fonts/Montaga-Regular.ttf"),
@@ -71,7 +73,7 @@ const Index = () => {
           router.push("/logIn");
           return;
         }
-        setUsername(await AsyncStorage.getItem("username"));
+        setUsername((await AsyncStorage.getItem("username")) || "");
         loadItems();
       } catch (error) {
         console.error("Error checking auth:", error);
@@ -193,12 +195,49 @@ const Index = () => {
     }
   };
 
+  // Asks "are you sure?" (browser dialog on web, native alert on phones)
+  const confirmAction = (title, message) =>
+    new Promise((resolve) => {
+      if (Platform.OS === "web") {
+        resolve(window.confirm(`${title}\n\n${message}`));
+        return;
+      }
+      Alert.alert(title, message, [
+        { text: "Cancel", style: "cancel", onPress: () => resolve(false) },
+        { text: "Remove", style: "destructive", onPress: () => resolve(true) },
+      ]);
+    });
+
+  const handleDeleteItem = async (item) => {
+    const confirmed = await confirmAction(
+      "Remove item?",
+      `Remove ${item.itemName} from your pantry?`
+    );
+    if (!confirmed) return;
+
+    try {
+      const response = await fetch(`${API_URL}/userItems/${item.userItemId}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      setPantryItems((prev) => prev.filter((i) => i.userItemId !== item.userItemId));
+      setFilteredItems((prev) => prev.filter((i) => i.userItemId !== item.userItemId));
+      setIsItemModalVisible(false);
+      setSelectedItem(null);
+    } catch (error) {
+      console.error("Error deleting item:", error);
+      setError("Failed to remove item. Please try again.");
+    }
+  };
+
   const handleAddItem = async (e) => {
     if (e) e.preventDefault();
     if (isAddingItem) return;
 
     // Validate fields first
-    if (!newItemData.item_name.trim() || !newItemData.item_category.trim()){
+    if (!newItemData.item_name.trim() || !newItemData.item_category.trim()) {
       setError("Please enter a name and category");
       return;
     }
@@ -214,11 +253,12 @@ const Index = () => {
       const newItem = await addItem({
         itemName: newItemData.item_name,
         itemCategory: newItemData.item_category,
-        itemUrl: 
+        // No image URL? Use TheMealDB's free ingredient picture for this name.
+        itemUrl:
           newItemData.item_url.trim() ||
           `https://www.themealdb.com/images/ingredients/${encodeURIComponent(
             newItemData.item_name.trim().toLowerCase().replace(/\s+/g, "_")
-          )}`,
+          )}.png`,
         quantity: parseInt(newItemData.item_quantity, 10) || 1,
       });
 
@@ -458,13 +498,19 @@ const Index = () => {
                         : "Add to Favorites"}
                     </Text>
                   </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.deleteButton}
+                    onPress={() => handleDeleteItem(selectedItem)}
+                  >
+                    <Ionicons name="trash-outline" size={22} color="#E0A3A3" />
+                    <Text style={styles.deleteButtonText}>Remove from pantry</Text>
+                  </TouchableOpacity>
                 </>
               )}
             </View>
           </TouchableOpacity>
         </Modal>
 
-        {/* Add Item Modal */}
         {/* Add Item Modal */}
         <Modal
           animationType="fade"
@@ -692,23 +738,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#685858",
     borderRadius: 25,
     marginRight: 20,
-    overflow: "hidden", // This ensures the image stays within bounds
-    position: "relative", // For positioning the title overlay
-  },
-  itemImage: {
-    width: "100%",
-    height: "100%", // Changed from 80% to 100%
-    resizeMode: "cover", // This will ensure the image covers the whole area
-  },
-  itemTitleContainer: {
-    position: "absolute", // Position it over the image
-    bottom: 0, // Align to bottom
-    left: 0,
-    right: 0,
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(55, 48, 48, 0.8)",
-    padding: 10,
+    overflow: "hidden",
+    position: "relative",
   },
   categoryText: {
     fontFamily: "Montaga",
@@ -720,18 +751,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 15,
-  },
-  addModalContent: {
-    position: "absolute",
-    top: "30%",
-    left: "50%",
-    transform: [{ translateX: -150 }],
-    backgroundColor: "#373030",
-    borderRadius: 15,
-    padding: 20,
-    width: 300,
-    elevation: 5,
-    zIndex: 1000,
   },
   modalOverlay: {
     flex: 1,
@@ -825,33 +844,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     textAlign: "center",
   },
-  favoriteButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 10,
-    marginTop: 15,
-    backgroundColor: "#524242",
-    borderRadius: 8,
-  },
-  favoriteButtonText: {
-    color: "#BCABAB",
-    fontFamily: "Montaga",
-    fontSize: 16,
-    marginLeft: 8,
-  },
-  favoriteIcon: {
-    marginLeft: 5,
-  },
-  favoriteIconContainer: {
-    position: "absolute",
-    top: 10,
-    right: 10,
-    backgroundColor: "rgba(255, 255, 255, 0.3)",
-    borderRadius: 20,
-    padding: 8,
-    zIndex: 1,
-  },
   userModalText: {
     fontFamily: "Montaga",
     color: "#BCABAB",
@@ -866,6 +858,22 @@ const styles = StyleSheet.create({
   clearButton: {
     padding: 8,
   },
+  deleteButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 10,
+    marginTop: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#E0A3A3",
+  },
+  deleteButtonText: {
+    color: "#E0A3A3",
+    fontFamily: "Montaga",
+    fontSize: 16,
+    marginLeft: 8,
+  },
 });
 
-export default Index;
+export default Index
