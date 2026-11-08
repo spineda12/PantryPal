@@ -20,8 +20,6 @@ import ItemImage from "../../components/ItemImage";
 const { width } = Dimensions.get("window");
 const isMobile = width < 600;
 
-
-
 const Restock = () => {
   const [fontsLoaded] = useFonts({
     Montaga: require("../../assets/fonts/Montaga-Regular.ttf"),
@@ -33,9 +31,6 @@ const Restock = () => {
   const [lowItems, setLowItems] = useState([]);
   const [filteredItems, setFilteredItems] = useState([]);
   const [userId, setUserId] = useState(null);
-
-
-  if (!fontsLoaded) return null;
 
   const openModal = (item) => {
     setSelectedItem(item);
@@ -108,7 +103,7 @@ const Restock = () => {
       const userId = await fetchUserId();
       const lowItems = await fetchLowItems(userId);
       await fetchLowItemDetails(lowItems);
-    }
+    };
 
     loadItems();
   }, []);
@@ -125,102 +120,45 @@ const Restock = () => {
     }
   };
 
-  const handleAddQuantity = async (itemId) => {
+  // Changes an item's quantity by +1 or -1, saves it, and updates the screen
+  // (the list, the card, and the open popup).
+  const changeQuantity = async (itemId, change) => {
     try {
       const currentItem = lowItems.find((item) => item.id === itemId);
       if (!currentItem) {
         throw new Error("Item not found in state.");
       }
-  
-      // Increment the quantity
-      const updatedQuantity = currentItem.quantity + 1;
-  
-      // Send the updated quantity to the server
-      const updateResponse = await fetch(
-        `${API_URL}/userItems/${itemId}`,
-        {
-          method: "PATCH",
-          body: JSON.stringify({ quantity: updatedQuantity }),
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+
+      const updatedQuantity = Math.max(0, (currentItem.quantity || 0) + change);
+      if (updatedQuantity === currentItem.quantity) return; // already at 0
+
+      const updateResponse = await fetch(`${API_URL}/userItems/${itemId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ quantity: updatedQuantity }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
       if (!updateResponse.ok) {
         throw new Error(`HTTP error! status: ${updateResponse.status}`);
       }
 
-      console.log("Updated item:", updatedQuantity);
-  
       const updatedItem = await updateResponse.json();
-  
-      // Update the state with the new quantity
-      setLowItems((prevItems) =>
-        prevItems.map((item) =>
-          item.id === itemId ? { ...item, quantity: updatedItem.quantity } : item
-        )
-      );
-      setFilteredItems((prevItems) =>
-        prevItems.map((item) =>
-          item.id === itemId ? { ...item, quantity: updatedItem.quantity } : item
-        )
-      );
+      const applyQuantity = (item) =>
+        item.id === itemId ? { ...item, quantity: updatedItem.quantity } : item;
+
+      setLowItems((prevItems) => prevItems.map(applyQuantity));
+      setFilteredItems((prevItems) => prevItems.map(applyQuantity));
+      // The popup shows its own copy of the item, so update that too
+      setSelectedItem((prev) => (prev ? applyQuantity(prev) : prev));
     } catch (error) {
-      console.error("Error adding quantity:", error);
-      // Optionally, show user feedback
+      console.error("Error changing quantity:", error);
       alert("Failed to update item quantity. Please try again.");
     }
   };
 
-  const handleSubtractQuantity = async (itemId) => {
-    try {
-      const currentItem = lowItems.find((item) => item.id === itemId);
-      if (!currentItem) {
-        throw new Error("Item not found in state.");
-      }
-  
-      // Increment the quantity
-      if (currentItem.quantity === 0) {
-        return;
-      }
-      const updatedQuantity = currentItem.quantity - 1;
-  
-      // Send the updated quantity to the server
-      const updateResponse = await fetch(
-        `${API_URL}/userItems/${itemId}`,
-        {
-          method: "PATCH",
-          body: JSON.stringify({ quantity: updatedQuantity }),
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      if (!updateResponse.ok) {
-        throw new Error(`HTTP error! status: ${updateResponse.status}`);
-      }
-  
-      const updatedItem = await updateResponse.json();
-  
-      // Update the state with the new quantity
-      setLowItems((prevItems) =>
-        prevItems.map((item) =>
-          item.id === itemId ? { ...item, quantity: updatedItem.quantity } : item
-        )
-      );
-      setFilteredItems((prevItems) =>
-        prevItems.map((item) =>
-          item.id === itemId ? { ...item, quantity: updatedItem.quantity } : item
-        )
-      );
-    } catch (error) {
-      console.error("Error adding quantity:", error);
-      // Optionally, show user feedback
-      alert("Failed to update item quantity. Please try again.");
-    }
-  };
-
-  
+  const handleAddQuantity = (itemId) => changeQuantity(itemId, 1);
+  const handleSubtractQuantity = (itemId) => changeQuantity(itemId, -1);
 
   const handleFavoriteToggle = async (itemId) => {
     try {
@@ -229,9 +167,7 @@ const Restock = () => {
         throw new Error("Item not found in state.");
       }
 
-      console.log("Current item:", currentItem);
       const updatedFavorite = !currentItem.isFavorite;
-      console.log("Updated favorite:", updatedFavorite);
 
       const response = await fetch(`${API_URL}/userItems/${itemId}`, {
         method: "PATCH",
@@ -244,15 +180,20 @@ const Restock = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const updatedItem = await response.json();
-      setLowItems((prevItems) => prevItems.map((item) => item.id === itemId ? { ...item, isFavorite: updatedItem.isFavorite } : item));
-      setFilteredItems((prevItems) => prevItems.map((item) => item.id === itemId ? { ...item, isFavorite: updatedItem.isFavorite } : item));
+      const applyFavorite = (item) =>
+        item.id === itemId ? { ...item, isFavorite: updatedItem.isFavorite } : item;
+      setLowItems((prevItems) => prevItems.map(applyFavorite));
+      setFilteredItems((prevItems) => prevItems.map(applyFavorite));
+      // The popup shows its own copy of the item, so update that too
+      setSelectedItem((prev) => (prev ? applyFavorite(prev) : prev));
     } catch (error) {
       console.error("Error toggling favorite:", error);
       alert("Failed to toggle favorite status. Please try again.");
     }
   };
-      
 
+  // Must come after all the hooks above (React rule)
+  if (!fontsLoaded) return null;
 
   const ItemModal = ({ item, visible, onClose }) => (
     <Modal
@@ -270,46 +211,43 @@ const Restock = () => {
           <View style={styles.modalInfo}>
             <Text style={styles.modalTitle}>{item?.title}</Text>
             <Text style={styles.modalDetails}>Category: {item?.category}</Text>
-            
+
             <View style={styles.quantityControls}>
               <TouchableOpacity
-                  style={styles.quantityButton}
-                  onPress={() => handleSubtractQuantity(item.id)}
+                style={styles.quantityButton}
+                onPress={() => handleSubtractQuantity(item.id)}
               >
-                  <Ionicons name="remove" size={24} color="#BCABAB" />
+                <Ionicons name="remove" size={24} color="#BCABAB" />
               </TouchableOpacity>
               <Text style={styles.modalDetails}>Quantity: {item?.quantity}</Text>
               <TouchableOpacity
-                  style={styles.quantityButton}
-                  onPress={() => handleAddQuantity(item.id)}
+                style={styles.quantityButton}
+                onPress={() => handleAddQuantity(item.id)}
               >
-                  <Ionicons name="add" size={24} color="#BCABAB" />
+                <Ionicons name="add" size={24} color="#BCABAB" />
               </TouchableOpacity>
             </View>
             <TouchableOpacity
-                    style={[
-                      styles.favoriteButton,
-                      selectedItem?.isFavorite && styles.favoriteButtonActive,
-                    ]}
-                    onPress={() => handleFavoriteToggle(selectedItem.id)}
-                  >
-                    <Ionicons
-                      name={selectedItem?.isFavorite ? "heart" : "heart-outline"}
-                      size={24}
-                      color={selectedItem?.isFavorite ? "#ff6b6b" : "#685858"}
-                    />
-                    <Text
-                      style={[
-                        styles.favoriteButtonText,
-                        selectedItem?.isFavorite &&
-                          styles.favoriteButtonTextActive,
-                      ]}
-                    >
-                      {selectedItem?.isFavorite
-                        ? "Favorited"
-                        : "Add to Favorites"}
-                    </Text>
-                  </TouchableOpacity>
+              style={[
+                styles.favoriteButton,
+                selectedItem?.isFavorite && styles.favoriteButtonActive,
+              ]}
+              onPress={() => handleFavoriteToggle(selectedItem.id)}
+            >
+              <Ionicons
+                name={selectedItem?.isFavorite ? "heart" : "heart-outline"}
+                size={24}
+                color={selectedItem?.isFavorite ? "#ff6b6b" : "#685858"}
+              />
+              <Text
+                style={[
+                  styles.favoriteButtonText,
+                  selectedItem?.isFavorite && styles.favoriteButtonTextActive,
+                ]}
+              >
+                {selectedItem?.isFavorite ? "Favorited" : "Add to Favorites"}
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
       </View>
@@ -389,9 +327,9 @@ const Restock = () => {
               <View style={styles.gridRow}>
                 {filteredItems
                   .slice(0, Math.ceil(filteredItems.length / 2))
-                  .map((item, index) => (
+                  .map((item) => (
                     <TouchableOpacity
-                      key={index}
+                      key={item.id}
                       style={styles.imageBackground}
                       onPress={() => openModal(item)}
                     >
@@ -418,28 +356,28 @@ const Restock = () => {
               <View style={styles.gridRow}>
                 {filteredItems
                   .slice(Math.ceil(filteredItems.length / 2))
-                  .map((item, index) => (
+                  .map((item) => (
                     <TouchableOpacity
-                      key={index}
+                      key={item.id}
                       style={styles.imageBackground}
                       onPress={() => openModal(item)}
                     >
                       <ItemImage uri={item?.src} name={`${item?.title ?? ""} × ${item?.quantity}`} />
                       <TouchableOpacity
-                          style={[
-                            styles.favoriteIconContainer,
-                            item.isFavorite && styles.favoriteIconContainerActive,
-                          ]}
-                          onPress={(e) => {
-                            e.stopPropagation();
-                            handleFavoriteToggle(item.id);
-                          }}
-                        >
-                          <Ionicons
-                            name={item.isFavorite ? "heart" : "heart-outline"}
-                            size={24}
-                            color={item.isFavorite ? "#ff6b6b" : "#685858"}
-                          />
+                        style={[
+                          styles.favoriteIconContainer,
+                          item.isFavorite && styles.favoriteIconContainerActive,
+                        ]}
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          handleFavoriteToggle(item.id);
+                        }}
+                      >
+                        <Ionicons
+                          name={item.isFavorite ? "heart" : "heart-outline"}
+                          size={24}
+                          color={item.isFavorite ? "#ff6b6b" : "#685858"}
+                        />
                       </TouchableOpacity>
                     </TouchableOpacity>
                   ))}
