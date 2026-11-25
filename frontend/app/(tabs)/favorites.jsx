@@ -31,9 +31,8 @@ const Favorites = () => {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [favoriteItems, setFavoriteItems] = useState([]);
   const [filteredItems, setFilteredItems] = useState([]);
+  const [searchText, setSearchText] = useState("");
   const [userId, setUserId] = useState("");
-
-  if (!fontsLoaded) return null;
 
   const openModal = (item) => {
     setSelectedItem(item);
@@ -111,7 +110,20 @@ const Favorites = () => {
     };
 
     loadFavorites();
-}, []); 
+}, []);
+
+  useEffect(() => {
+    const search = searchText.trim().toLowerCase();
+    let result = selectedCategory
+      ? favoriteItems.filter((item) => item.category === selectedCategory)
+      : favoriteItems;
+    if (search) {
+      result = result.filter((item) =>
+        (item.title || "").toLowerCase().includes(search)
+      );
+    }
+    setFilteredItems(result);
+  }, [searchText, selectedCategory, favoriteItems]);
 
   // Category filter function
   const handleCategoryFilter = (category) => {
@@ -155,10 +167,14 @@ const Favorites = () => {
           ? updatedItems.filter((item) => item.category === selectedCategory)
           : updatedItems
       );
+      setModalVisible(false);
+      setSelectedItem(null);
     } catch (error) {
       console.error("Error toggling favorite:", error);
     }
   };
+
+  if (!fontsLoaded) return null;
   const ItemModal = ({ item, visible, onClose }) => (
     <Modal
       animationType="fade"
@@ -229,6 +245,8 @@ const Favorites = () => {
               style={styles.input}
               placeholder="Search favorites..."
               placeholderTextColor="#BCABAB"
+              value={searchText}
+              onChangeText={setSearchText}
             />
           </View>
         </View>
