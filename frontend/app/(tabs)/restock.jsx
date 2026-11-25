@@ -30,6 +30,8 @@ const Restock = () => {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [lowItems, setLowItems] = useState([]);
   const [filteredItems, setFilteredItems] = useState([]);
+
+  const [searchText, setSearchText] = useState("");
   const [userId, setUserId] = useState(null);
 
   const openModal = (item) => {
@@ -107,6 +109,20 @@ const Restock = () => {
 
     loadItems();
   }, []);
+
+  useEffect(() => {
+    const search =searchText.trim().toLowerCase();
+    let result = selectedCategory
+      ? lowItems.filter((item) => item.category === selectedCategory)
+      : lowItems;
+    if (search) {
+      result = result.filter((item) =>
+      (item.title || "").toLowerCase().includes(search)
+      );  
+    }
+    setFilteredItems(result);
+  }, [searchText, selectedCategory, lowItems]);
+
 
   // Add category filter function
   const handleCategoryFilter = (category) => {
@@ -295,6 +311,8 @@ const Restock = () => {
               style={styles.input}
               placeholder="Search low items..."
               placeholderTextColor="#BCABAB"
+              value={searchText}
+              onChangeText={setSearchText}
             />
           </View>
         </View>
