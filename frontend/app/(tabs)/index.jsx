@@ -194,6 +194,30 @@ const Index = () => {
       loadItems();
     }
   };
+  // Changes an item's quantity by +1 or -1 from the popup and saves it
+  const changeQuantity = async (item, change) => {
+    const newQuantity = Math.max(0, (item.quantity || 0) + change);
+    if (newQuantity === item.quantity) return; // already at 0
+    try {
+      const response = await fetch(`${API_URL}/userItems/${item.userItemId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ quantity: newQuantity }),
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const updated = await response.json();
+      const applyQuantity = (i) =>
+        i.userItemId === item.userItemId ? { ...i, quantity: updated.quantity } : i;
+      setPantryItems((prev) => prev.map(applyQuantity));
+      setFilteredItems((prev) => prev.map(applyQuantity));
+      setSelectedItem((prev) => (prev ? applyQuantity(prev) : prev));
+    } catch (error) {
+      console.error("Error changing quantity:", error);
+      alert("Failed to update quantity. Please try again.");
+    }
+  };
 
   // Asks "are you sure?" (browser dialog on web, native alert on phones)
   const confirmAction = (title, message) =>
@@ -474,6 +498,30 @@ const Index = () => {
                   <Text style={styles.modalItemCategory}>
                     Category: {selectedItem.itemCategory}
                   </Text>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      marginTop: 10,
+                    }}
+                  >
+                    <TouchableOpacity
+                      style={{ padding: 8 }}
+                      onPress={() => changeQuantity(selectedItem, -1)}
+                    >
+                      <Ionicons name="remove-circle-outline" size={28} color="#BCABAB" />
+                    </TouchableOpacity>
+                    <Text style={[styles.modalItemCategory, { marginHorizontal: 12 }]}>
+                      Quantity: {selectedItem.quantity ?? 0}
+                    </Text>
+                    <TouchableOpacity
+                      style={{ padding: 8 }}
+                      onPress={() => changeQuantity(selectedItem, 1)}
+                    >
+                      <Ionicons name="add-circle-outline" size={28} color="#BCABAB" />
+                    </TouchableOpacity>
+                  </View>
                   <TouchableOpacity
                     style={[
                       styles.favoriteButton,
