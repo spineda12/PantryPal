@@ -68,7 +68,6 @@ To use a real phone with Expo Go, your phone can't reach `localhost` on your com
 | `GET/POST /items`, `GET/PUT/PATCH/DELETE /items/{id}` | Food items (name, category, image URL) |
 | `GET /userItems/user/{userId}` | Everything in one user's pantry |
 | `POST /userItems`, `PATCH/PUT/DELETE /userItems/{id}` | A user's copy of an item: `quantity`, `unit`, `expirationDate`, `isFavorite` |
-| `/pantries`, `/users` | Built but not used by the app yet |
 
 ## Changes from the class version
 

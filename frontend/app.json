@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "pantry-planner",
-    "slug": "pantry-planner",
+    "name": "PantryPal",
+    "slug": "pantrypal",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",

@@ -45,7 +45,6 @@ const Recipe = () => {
       }
     };
     const fetchItems = async (userId) => {
-      console.log("Fetching items...");
       try {
         const response = await fetch(
           `${API_URL}/userItems/user/${userId}`
@@ -54,9 +53,7 @@ const Recipe = () => {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         let data = await response.json();
-        console.log("Fetched items:", data);
         const dataInStock = data.filter((item) => item.quantity > 0);
-        console.log("Items in stock:", dataInStock);
         return dataInStock;
       } catch (error) {
         console.error("Error fetching items:", error);
@@ -65,7 +62,6 @@ const Recipe = () => {
     };
 
     const fetchItemDetails = async (items) => {
-      console.log("Fetching details:", items);
       const updatedItems = await Promise.all(
         items.map(async (item) => {
           try {
