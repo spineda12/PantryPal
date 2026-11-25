@@ -59,7 +59,6 @@ const Restock = () => {
         }
         const data = await response.json();
         const lowItems = data.filter((item) => item.quantity <= 4);
-        console.log("Low items:", lowItems);
         return lowItems;
       } catch (error) {
         console.error("Detailed error:", error);
@@ -68,7 +67,6 @@ const Restock = () => {
     };
 
     const fetchLowItemDetails = async (lowItems) => {
-      console.log("Fetching details:");
       const updatedLowItems = await Promise.all(
         lowItems.map(async (item) => {
           try {
@@ -79,7 +77,6 @@ const Restock = () => {
               throw new Error(`HTTP error! status: ${response.status}`);
             }
             const data = await response.json();
-            console.log("Item:", data);
             return {
               ...item,
               src: data.itemUrl,

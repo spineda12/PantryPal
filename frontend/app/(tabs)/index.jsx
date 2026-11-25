@@ -46,6 +46,8 @@ const Index = () => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [isItemModalVisible, setIsItemModalVisible] = useState(false);
   const [isAddingItem, setIsAddingItem] = useState(false);
+  // Shown inside the add form (e.g. no category picked) so the form stays open
+  const [addFormError, setAddFormError] = useState(null);
 
   const [newItemData, setNewItemData] = useState({
     item_name: "",
@@ -261,10 +263,11 @@ const Index = () => {
     if (isAddingItem) return;
 
     // Validate fields first
-    if (!newItemData.item_name.trim() || !newItemData.item_category.trim()) {
-      setError("Please enter a name and category");
+    if (!newItemData.item_name.trim() || !newItemData.item_category) {
+      setAddFormError("Please enter a name and pick a category");
       return;
     }
+    setAddFormError(null);
 
     setIsAddingItem(true);
     try {
@@ -577,14 +580,38 @@ const Index = () => {
                     setNewItemData({ ...newItemData, item_name: text })
                   }
                 />
-                <TextInput
-                  style={styles.modalInput}
-                  placeholder="Category"
-                  value={newItemData.item_category}
-                  onChangeText={(text) =>
-                    setNewItemData({ ...newItemData, item_category: text })
-                  }
-                />
+                {/* Category picker: same list as the sidebar buttons */}
+                <Text style={styles.categoryPickerLabel}>Category</Text>
+                <View style={styles.categoryPicker}>
+                  {categories.map((category) => {
+                    const isSelected = newItemData.item_category === category;
+                    return (
+                      <TouchableOpacity
+                        key={category}
+                        style={[
+                          styles.categoryOption,
+                          isSelected && styles.categoryOptionSelected,
+                        ]}
+                        onPress={() => {
+                          setNewItemData({ ...newItemData, item_category: category });
+                          setAddFormError(null);
+                        }}
+                      >
+                        <Text
+                          style={[
+                            styles.categoryOptionText,
+                            isSelected && styles.categoryOptionTextSelected,
+                          ]}
+                        >
+                          {category}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+                {addFormError && (
+                  <Text style={styles.addFormErrorText}>{addFormError}</Text>
+                )}
                 <TextInput
                   style={styles.modalInput}
                   placeholder="Image URL (optional)"
@@ -825,6 +852,43 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     width: "100%",
     fontFamily: "Montaga",
+  },
+  categoryPickerLabel: {
+    color: "#BCABAB",
+    fontFamily: "Montaga",
+    fontSize: 16,
+    marginBottom: 6,
+  },
+  categoryPicker: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    marginBottom: 10,
+  },
+  categoryOption: {
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: "#685858",
+  },
+  categoryOptionSelected: {
+    backgroundColor: "#BCABAB",
+    borderColor: "#BCABAB",
+  },
+  categoryOptionText: {
+    color: "#BCABAB",
+    fontFamily: "Montaga",
+    fontSize: 14,
+  },
+  categoryOptionTextSelected: {
+    color: "#373030",
+  },
+  addFormErrorText: {
+    color: "#ff6b6b",
+    fontFamily: "Montaga",
+    fontSize: 14,
+    marginBottom: 10,
   },
   itemModalContent: {
     position: "absolute",

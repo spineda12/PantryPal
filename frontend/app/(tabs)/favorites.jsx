@@ -59,7 +59,6 @@ const Favorites = () => {
             }
             const data = await response.json();
             const favorites = data.filter((item) => item.isFavorite);
-            console.log("Favorites:", favorites);
             return favorites;
         } catch (error) {
             console.error("Detailed error:", error);
@@ -68,7 +67,6 @@ const Favorites = () => {
     };
 
     const fetchFavoriteDetails = async (favorites) => {
-        console.log("Fetching details:");
         const updatedFavorites = await Promise.all(
             favorites.map(async (item) => {
                 try {
@@ -79,7 +77,6 @@ const Favorites = () => {
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }
                     const data = await response.json();
-                    console.log("Item:", data);
                     return {
                         ...item,
                         src: data.itemUrl,
@@ -104,7 +101,6 @@ const Favorites = () => {
     // Execute functions
     const loadFavorites = async () => {
         const userId = await fetchUserId();
-        console.log("User ID:", userId);
         const favorites = await fetchFavoriteItems(userId);
         await fetchFavoriteDetails(favorites);
     };
