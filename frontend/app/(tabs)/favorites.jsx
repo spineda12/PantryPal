@@ -7,8 +7,6 @@ import {
   Dimensions,
   TextInput,
   ScrollView,
-  Image,
-  Modal,
   TouchableOpacity,
 } from "react-native";
 import { useFonts } from "expo-font";
@@ -16,6 +14,7 @@ import { Link } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import ItemImage from "../../components/ItemImage";
+import PopupCard, { popupImageStyle } from "../../components/PopupCard";
 const { width } = Dimensions.get("window");
 const isMobile = width < 600;
 
@@ -172,34 +171,22 @@ const Favorites = () => {
 
   if (!fontsLoaded) return null;
   const ItemModal = ({ item, visible, onClose }) => (
-    <Modal
-      animationType="fade"
-      transparent={true}
-      visible={visible}
-      onRequestClose={onClose}
-    >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <TouchableOpacity style={styles.backButton} onPress={onClose}>
-            <Ionicons name="arrow-back" size={24} color="#BCABAB" />
-          </TouchableOpacity>
-          <ItemImage uri={item?.src} style={styles.modalImage} />
-          <View style={styles.modalInfo}>
-            <Text style={styles.modalTitle}>{item?.title}</Text>
-            <Text style={styles.modalDetails}>Category: {item?.category}</Text>
-            <TouchableOpacity
-              style={styles.favoriteButton}
-              onPress={() => handleFavoriteToggle(item?.id)}
-            >
-              <Ionicons name="heart" size={24} color="#ff6b6b" />
-              <Text style={styles.favoriteButtonText}>
-                Remove from Favorites
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+    <PopupCard visible={visible} onClose={onClose}>
+      <ItemImage uri={item?.src} style={popupImageStyle} />
+      <View style={styles.modalInfo}>
+        <Text style={styles.modalTitle}>{item?.title}</Text>
+        <Text style={styles.modalDetails}>Category: {item?.category}</Text>
+        <TouchableOpacity
+          style={styles.favoriteButton}
+          onPress={() => handleFavoriteToggle(item?.id)}
+        >
+          <Ionicons name="heart" size={24} color="#ff6b6b" />
+          <Text style={styles.favoriteButtonText}>
+            Remove from Favorites
+          </Text>
+        </TouchableOpacity>
       </View>
-    </Modal>
+    </PopupCard>
   );
 
   return (
@@ -446,29 +433,6 @@ const styles = StyleSheet.create({
     height: "100%",
     resizeMode: "cover",
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modalContent: {
-    position: "absolute",
-    top: "50%",
-    left: "50%",
-    transform: [{ translateX: -200 }, { translateY: -200 }],
-    backgroundColor: "#373030",
-    borderRadius: 15,
-    padding: 20,
-    width: 400,
-    maxHeight: "80%",
-  },
-  modalImage: {
-    width: "100%",
-    height: 300,
-    borderRadius: 15,
-    marginBottom: 15,
-  },
   modalInfo: {
     width: "100%",
     alignItems: "center",
@@ -485,13 +449,6 @@ const styles = StyleSheet.create({
     color: "#BCABAB",
     marginBottom: 5,
   },
-  backButton: {
-    position: "absolute",
-    top: 20,
-    left: 20,
-    padding: 10,
-    zIndex: 1,
-  },
   favoriteIconContainer: {
     position: "absolute",
     top: 10,
@@ -502,6 +459,7 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   favoriteButton: {
+    alignSelf: "stretch", // full width, like the Home popup
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",

@@ -10,17 +10,16 @@ import {
   ScrollView,
   TouchableOpacity,
   Modal,
-  Image,
   Alert,
   Platform,
 } from "react-native";
 import { useFonts } from "expo-font";
 import { Link, useRouter } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { TouchableWithoutFeedback } from "react-native";
 
 import { usePantry } from "../../hooks/usePantry";
 import ItemImage from "../../components/ItemImage";
+import PopupCard, { popupImageStyle } from "../../components/PopupCard";
 
 const { width } = Dimensions.get("window");
 const isMobile = width < 600;
@@ -405,6 +404,8 @@ const Index = () => {
               <TouchableOpacity
                 style={styles.addButton}
                 onPress={() => setIsAddModalVisible(true)}
+                accessibilityRole="button"
+                accessibilityLabel="Add item"
               >
                 <Ionicons
                   name="add"
@@ -475,172 +476,156 @@ const Index = () => {
           </View>
         </View>
 
-        {/* Item Detail Modal */}
-        <Modal
-          animationType="fade"
-          transparent={true}
+        {/* Item Detail popup */}
+        <PopupCard
           visible={isItemModalVisible}
-          onRequestClose={() => setIsItemModalVisible(false)}
+          onClose={() => setIsItemModalVisible(false)}
         >
-          <TouchableOpacity
-            style={styles.modalOverlay}
-            activeOpacity={1}
-            onPress={() => setIsItemModalVisible(false)}
-          >
-            <View style={styles.itemModalContent}>
-              {selectedItem && (
-                <>
-                  <Image
-                    source={{ uri: selectedItem.itemUrl }}
-                    style={styles.modalImage}
-                  />
-                  <Text style={styles.modalItemTitle}>
-                    {selectedItem.itemName}
-                  </Text>
-                  <Text style={styles.modalItemCategory}>
-                    Category: {selectedItem.itemCategory}
-                  </Text>
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      marginTop: 10,
-                    }}
-                  >
-                    <TouchableOpacity
-                      style={{ padding: 8 }}
-                      onPress={() => changeQuantity(selectedItem, -1)}
-                    >
-                      <Ionicons name="remove-circle-outline" size={28} color="#BCABAB" />
-                    </TouchableOpacity>
-                    <Text style={[styles.modalItemCategory, { marginHorizontal: 12 }]}>
-                      Quantity: {selectedItem.quantity ?? 0}
-                    </Text>
-                    <TouchableOpacity
-                      style={{ padding: 8 }}
-                      onPress={() => changeQuantity(selectedItem, 1)}
-                    >
-                      <Ionicons name="add-circle-outline" size={28} color="#BCABAB" />
-                    </TouchableOpacity>
-                  </View>
-                  <TouchableOpacity
-                    style={[
-                      styles.favoriteButton,
-                      selectedItem.isFavorite && styles.favoriteButtonActive,
-                    ]}
-                    onPress={() => handleFavoriteToggle(selectedItem.id)}
-                  >
-                    <Ionicons
-                      name={selectedItem.isFavorite ? "heart" : "heart-outline"}
-                      size={24}
-                      color={selectedItem.isFavorite ? "#ff6b6b" : "#685858"}
-                    />
-                    <Text
-                      style={[
-                        styles.favoriteButtonText,
-                        selectedItem.isFavorite &&
-                          styles.favoriteButtonTextActive,
-                      ]}
-                    >
-                      {selectedItem.isFavorite
-                        ? "Favorited"
-                        : "Add to Favorites"}
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.deleteButton}
-                    onPress={() => handleDeleteItem(selectedItem)}
-                  >
-                    <Ionicons name="trash-outline" size={22} color="#E0A3A3" />
-                    <Text style={styles.deleteButtonText}>Remove from pantry</Text>
-                  </TouchableOpacity>
-                </>
-              )}
-            </View>
-          </TouchableOpacity>
-        </Modal>
-
-        {/* Add Item Modal */}
-        <Modal
-          animationType="fade"
-          transparent={true}
-          visible={isAddModalVisible}
-          onRequestClose={() => setIsAddModalVisible(false)}
-        >
-          <TouchableWithoutFeedback>
-            <View style={styles.modalOverlay}>
-              <View style={styles.addModalContent}>
-                <TextInput
-                  style={styles.modalInput}
-                  placeholder="Item Name"
-                  value={newItemData.item_name}
-                  onChangeText={(text) =>
-                    setNewItemData({ ...newItemData, item_name: text })
-                  }
-                />
-                {/* Category picker: same list as the sidebar buttons */}
-                <Text style={styles.categoryPickerLabel}>Category</Text>
-                <View style={styles.categoryPicker}>
-                  {categories.map((category) => {
-                    const isSelected = newItemData.item_category === category;
-                    return (
-                      <TouchableOpacity
-                        key={category}
-                        style={[
-                          styles.categoryOption,
-                          isSelected && styles.categoryOptionSelected,
-                        ]}
-                        onPress={() => {
-                          setNewItemData({ ...newItemData, item_category: category });
-                          setAddFormError(null);
-                        }}
-                      >
-                        <Text
-                          style={[
-                            styles.categoryOptionText,
-                            isSelected && styles.categoryOptionTextSelected,
-                          ]}
-                        >
-                          {category}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-                {addFormError && (
-                  <Text style={styles.addFormErrorText}>{addFormError}</Text>
-                )}
-                <TextInput
-                  style={styles.modalInput}
-                  placeholder="Image URL (optional)"
-                  value={newItemData.item_url}
-                  onChangeText={(text) =>
-                    setNewItemData({ ...newItemData, item_url: text })
-                  }
-                />
-                <TextInput
-                  style={styles.modalInput}
-                  placeholder="Quantity (default 1)"
-                  keyboardType="number-pad"
-                  value={newItemData.item_quantity}
-                  onChangeText={(text) =>
-                    setNewItemData({
-                      ...newItemData,
-                      item_quantity: text.replace(/[^0-9]/g, ""),
-                    })
-                  }
-                />
+          {selectedItem && (
+            <>
+              <ItemImage uri={selectedItem.itemUrl} style={popupImageStyle} />
+              <Text style={styles.modalItemTitle}>
+                {selectedItem.itemName}
+              </Text>
+              <Text style={styles.modalItemCategory}>
+                Category: {selectedItem.itemCategory}
+              </Text>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginTop: 10,
+                }}
+              >
                 <TouchableOpacity
-                  style={styles.addItemButton}
-                  onPress={handleAddItem}
+                  style={{ padding: 8 }}
+                  onPress={() => changeQuantity(selectedItem, -1)}
                 >
-                  <Text style={styles.addItemButtonText}>Add Item</Text>
+                  <Ionicons name="remove-circle-outline" size={28} color="#BCABAB" />
+                </TouchableOpacity>
+                <Text style={[styles.modalItemCategory, { marginHorizontal: 12 }]}>
+                  Quantity: {selectedItem.quantity ?? 0}
+                </Text>
+                <TouchableOpacity
+                  style={{ padding: 8 }}
+                  onPress={() => changeQuantity(selectedItem, 1)}
+                >
+                  <Ionicons name="add-circle-outline" size={28} color="#BCABAB" />
                 </TouchableOpacity>
               </View>
-            </View>
-          </TouchableWithoutFeedback>
-        </Modal>
+              <TouchableOpacity
+                style={[
+                  styles.favoriteButton,
+                  selectedItem.isFavorite && styles.favoriteButtonActive,
+                ]}
+                onPress={() => handleFavoriteToggle(selectedItem.id)}
+              >
+                <Ionicons
+                  name={selectedItem.isFavorite ? "heart" : "heart-outline"}
+                  size={24}
+                  color={selectedItem.isFavorite ? "#ff6b6b" : "#685858"}
+                />
+                <Text
+                  style={[
+                    styles.favoriteButtonText,
+                    selectedItem.isFavorite &&
+                      styles.favoriteButtonTextActive,
+                  ]}
+                >
+                  {selectedItem.isFavorite
+                    ? "Favorited"
+                    : "Add to Favorites"}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.deleteButton}
+                onPress={() => handleDeleteItem(selectedItem)}
+              >
+                <Ionicons name="trash-outline" size={22} color="#E0A3A3" />
+                <Text style={styles.deleteButtonText}>Remove from pantry</Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </PopupCard>
+
+        {/* Add Item popup */}
+        <PopupCard
+          visible={isAddModalVisible}
+          onClose={() => {
+            setIsAddModalVisible(false);
+            setAddFormError(null);
+          }}
+          title="Add item"
+          maxWidth={380}
+        >
+          <TextInput
+            style={styles.modalInput}
+            placeholder="Item Name"
+            value={newItemData.item_name}
+            onChangeText={(text) =>
+              setNewItemData({ ...newItemData, item_name: text })
+            }
+          />
+          {/* Category picker: same list as the sidebar buttons */}
+          <Text style={styles.categoryPickerLabel}>Category</Text>
+          <View style={styles.categoryPicker}>
+            {categories.map((category) => {
+              const isSelected = newItemData.item_category === category;
+              return (
+                <TouchableOpacity
+                  key={category}
+                  style={[
+                    styles.categoryOption,
+                    isSelected && styles.categoryOptionSelected,
+                  ]}
+                  onPress={() => {
+                    setNewItemData({ ...newItemData, item_category: category });
+                    setAddFormError(null);
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.categoryOptionText,
+                      isSelected && styles.categoryOptionTextSelected,
+                    ]}
+                  >
+                    {category}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+          {addFormError && (
+            <Text style={styles.addFormErrorText}>{addFormError}</Text>
+          )}
+          <TextInput
+            style={styles.modalInput}
+            placeholder="Image URL (optional)"
+            value={newItemData.item_url}
+            onChangeText={(text) =>
+              setNewItemData({ ...newItemData, item_url: text })
+            }
+          />
+          <TextInput
+            style={styles.modalInput}
+            placeholder="Quantity (default 1)"
+            keyboardType="number-pad"
+            value={newItemData.item_quantity}
+            onChangeText={(text) =>
+              setNewItemData({
+                ...newItemData,
+                item_quantity: text.replace(/[^0-9]/g, ""),
+              })
+            }
+          />
+          <TouchableOpacity
+            style={styles.addItemButton}
+            onPress={handleAddItem}
+          >
+            <Text style={styles.addItemButtonText}>Add Item</Text>
+          </TouchableOpacity>
+        </PopupCard>
 
         {/* User Modal */}
         <Modal
@@ -889,27 +874,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginBottom: 10,
   },
-  itemModalContent: {
-    position: "absolute",
-    top: "50%",
-    left: "50%",
-    transform: [{ translateX: -200 }, { translateY: -200 }],
-    backgroundColor: "#373030",
-    borderRadius: 15,
-    padding: 20,
-    width: 400,
-    maxHeight: "80%",
-  },
-  addModalContent: {
-    position: "absolute",
-    top: "30%",
-    left: "50%",
-    transform: [{ translateX: -150 }],
-    backgroundColor: "#373030",
-    borderRadius: 15,
-    padding: 20,
-    width: 300,
-  },
   userModalContent: {
     position: "absolute",
     top: 100,
@@ -936,14 +900,8 @@ const styles = StyleSheet.create({
     fontFamily: "Montaga",
     fontSize: 16,
   },
-  modalImage: {
-    width: "100%",
-    height: 300,
-    borderRadius: 15,
-    marginBottom: 15,
-  },
   modalItemTitle: {
-    color: "#BCABAB",
+    color: "#FFFFFF",
     fontFamily: "Montaga",
     fontSize: 24,
     textAlign: "center",
