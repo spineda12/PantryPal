@@ -26,7 +26,6 @@ const { width } = Dimensions.get("window");
 const isMobile = width < 600;
 
 const categories = [
-  "papers",
   "fruit",
   "vegetable",
   "meat",
@@ -34,6 +33,7 @@ const categories = [
   "dairy",
   "grain",
   "condiment",
+  "other", // anything else you keep in the pantry: paper towels, straws, foil...
 ];
 
 const Index = () => {
