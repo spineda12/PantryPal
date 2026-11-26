@@ -6,6 +6,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+// The shared list of foods (name, category, picture). One record like "chicken"
+// is used by everyone's pantry, so users can add foods and read them, but not
+// change or delete them: that would change or break other people's pantries.
+// (There are no PUT, PATCH or DELETE routes; Spring answers those with 405.)
 @RestController
 @RequestMapping("/items")
 public class ItemController {
@@ -15,21 +19,27 @@ public class ItemController {
         this.itemRepository = itemRepository;
     }
 
-    // Create a new item
+    // Add a new food
     @PostMapping
     public ResponseEntity<Item> createItem(@RequestBody Item item) {
+        if (isBlank(item.getItemName()) || isBlank(item.getItemCategory())) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        // Always create a new record. Without this, sending an existing id
+        // would overwrite that food for everyone.
+        item.setId(null);
         Item savedItem = itemRepository.save(item);
         return new ResponseEntity<>(savedItem, HttpStatus.CREATED);
     }
 
-    // Get all items
+    // Get all foods
     @GetMapping
     public ResponseEntity<List<Item>> getAllItems() {
         List<Item> items = itemRepository.findAll();
         return new ResponseEntity<>(items, HttpStatus.OK);
     }
 
-    // Get an item by ID
+    // Get one food by id
     @GetMapping("/{id}")
     public ResponseEntity<Item> getItemById(@PathVariable Long id) {
         return itemRepository.findById(id)
@@ -37,50 +47,7 @@ public class ItemController {
                 .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
-    // Update an item
-    @PutMapping("/{id}")
-    public ResponseEntity<Item> updateItem(@PathVariable Long id, @RequestBody Item itemDetails) {
-        return itemRepository.findById(id)
-                .map(item -> {
-                    item.setItemName(itemDetails.getItemName());
-                    item.setItemCategory(itemDetails.getItemCategory());
-                    item.setItemUrl(itemDetails.getItemUrl());
-                    Item updatedItem = itemRepository.save(item);
-                    return new ResponseEntity<>(updatedItem, HttpStatus.OK);
-                })
-                .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
-    }
-
-    // Update an item partially
-    @PatchMapping("/{id}")
-    public ResponseEntity<Item> updateItemPartial(@PathVariable Long id, @RequestBody Item itemDetails) {
-        return itemRepository.findById(id)
-                .map(item -> {
-                    if (itemDetails.getItemName() != null) {
-                        item.setItemName(itemDetails.getItemName());
-                    }
-                    if (itemDetails.getItemCategory() != null) {
-                        item.setItemCategory(itemDetails.getItemCategory());
-                    }
-
-                    if (itemDetails.getItemUrl() != null) {
-                        item.setItemUrl(itemDetails.getItemUrl());
-                    }
-                  
-                    Item updatedItem = itemRepository.save(item);
-                    return new ResponseEntity<>(updatedItem, HttpStatus.OK);
-                })
-                .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
-    }
-
-    // Delete an item
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Object> deleteItem(@PathVariable Long id) {
-        return itemRepository.findById(id)
-                .map(item -> {
-                    itemRepository.delete(item);
-                    return new ResponseEntity<>(HttpStatus.OK);
-                })
-                .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+    private static boolean isBlank(String value) {
+        return value == null || value.isBlank();
     }
 }

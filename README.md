@@ -68,7 +68,7 @@ Only sign up, log in and `/hello` are public. Every other request needs the toke
 | `POST /api/auth/register` | Create an account (`name`, `username`, `password`) |
 | `POST /api/auth/login` | Log in; returns `{ token, userId, username }` |
 | `GET /api/auth/me` | The logged-in user's profile |
-| `GET/POST /items`, `GET/PUT/PATCH/DELETE /items/{id}` | Food items (name, category, image URL) |
+| `GET/POST /items`, `GET /items/{id}` | The shared list of foods (name, category, image URL). Anyone logged in can add and read foods; nobody can change or delete them, since every pantry uses them. |
 | `GET /userItems`, `GET /userItems/user/{userId}` | Everything in your pantry (another user's id returns 403) |
 | `POST /userItems`, `GET/PATCH/PUT/DELETE /userItems/{id}` | Your copy of an item: `quantity`, `unit`, `expirationDate`, `isFavorite`. Only your own items. |
 
