@@ -1,4 +1,4 @@
-import { API_URL, GOOGLE_LOGIN_ENABLED } from "../constants/api";
+import { API_URL, GOOGLE_LOGIN_ENABLED, saveLogin } from "../constants/api";
 import React, { useState } from 'react';
 import { 
     View, 
@@ -11,7 +11,6 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useFonts } from 'expo-font';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 const LogIn = () => {
@@ -53,10 +52,9 @@ const LogIn = () => {
                 }),
             });
             if (response.ok) {
-                // The backend sends back the user's id as plain text, e.g. "7"
-                const userId = (await response.text()).trim();
-                await AsyncStorage.setItem('userId', userId);
-                await AsyncStorage.setItem('username', username);
+                // The backend sends back { token, userId, username }.
+                // The token goes with every later request (see authFetch).
+                await saveLogin(await response.json());
                 router.replace('/(tabs)');
             } else {
                 setErrorMessage('Wrong username or password.');

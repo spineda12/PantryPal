@@ -20,11 +20,9 @@ public class UserService {
 
     // Create a user for manual registration
     public void createUser(String name, String username, String password, String role) {
-        System.out.println("Creating user: " + username);
         validateUserInput(username, password);
 
         if (findByUsername(username).isPresent()) {
-            System.err.println("User already exists: " + username);
             throw new ValidationException("User already exists.");
         }
 
@@ -36,7 +34,6 @@ public class UserService {
         userAuth.setEmail(null); // Email not needed for manual registration
 
         userAuthRepository.save(userAuth);
-        System.out.println("User saved: " + username);
     }
 
     // Overloaded createUser method for default role = "USER"
