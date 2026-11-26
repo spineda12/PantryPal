@@ -399,7 +399,16 @@ const Index = () => {
           </View>
 
           <View style={styles.titleRow}>
-            <Text style={styles.username}>{username || "My Pantry"}</Text>
+            {/* One line only: long names shrink a little (phones) and end in "…",
+                so the + and account buttons always stay on screen */}
+            <Text
+              style={styles.username}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.6}
+            >
+              {username || "My Pantry"}
+            </Text>
             <View style={styles.userControls}>
               <TouchableOpacity
                 style={styles.addButton}
@@ -416,6 +425,8 @@ const Index = () => {
               <TouchableOpacity
                 onPress={() => setIsUserModalVisible(true)}
                 style={styles.userButton}
+                accessibilityRole="button"
+                accessibilityLabel="Account menu"
               >
                 <Ionicons
                   name="person-circle-outline"
@@ -769,6 +780,9 @@ const styles = StyleSheet.create({
     margin: 20,
   },
   username: {
+    flex: 1, // take the space the buttons don't need...
+    flexShrink: 1, // ...and give way to them instead of pushing them off screen
+    marginRight: 12,
     fontFamily: "Montaga",
     fontSize: isMobile ? 42 : 56,
     color: "#ffffff",
@@ -810,6 +824,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 15,
+    flexShrink: 0, // the + and account buttons never get squeezed
   },
   modalOverlay: {
     flex: 1,

@@ -8,4 +8,5 @@ import java.util.Optional;
 public interface UserItemsRepository extends JpaRepository<UserItems, Long> {
     List<UserItems> findByUserId(Long userId);
     Optional<UserItems> findByIdAndUserId(Long id, Long userId);
+    void deleteByUserId(Long userId); // empties one user's pantry (used when deleting an account)
 }

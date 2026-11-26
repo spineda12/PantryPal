@@ -1,8 +1,10 @@
 package group15.pantrypal.auth;
 
+import group15.pantrypal.useritems.UserItemsRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 import java.util.Optional;
@@ -11,10 +13,12 @@ import java.util.Optional;
 public class UserService {
 
     private final UserAuthRepository userAuthRepository;
+    private final UserItemsRepository userItemsRepository;
     private final BCryptPasswordEncoder passwordEncoder;
 
-    public UserService(UserAuthRepository userAuthRepository) {
+    public UserService(UserAuthRepository userAuthRepository, UserItemsRepository userItemsRepository) {
         this.userAuthRepository = userAuthRepository;
+        this.userItemsRepository = userItemsRepository;
         this.passwordEncoder = new BCryptPasswordEncoder();
     }
 
@@ -87,18 +91,24 @@ public class UserService {
     }
 
     // Delete a user by object
+    // Deletes the account and everything in its pantry, all or nothing.
+    // The shared foods (chicken, eggs...) stay, since other pantries use them.
+    @Transactional
     public void deleteUser(UserAuth userAuth) {
         if (userAuth == null) {
             throw new IllegalArgumentException("User must not be null");
         }
+        userItemsRepository.deleteByUserId(userAuth.getUserId());
         userAuthRepository.delete(userAuth);
     }
 
     // Delete a user by ID
+    @Transactional
     public void deleteUserById(Long userId) {
         if (userId == null) {
             throw new IllegalArgumentException("User ID must not be null");
         }
+        userItemsRepository.deleteByUserId(userId);
         userAuthRepository.deleteById(userId);
     }
 
