@@ -1,4 +1,4 @@
-import { API_URL } from "../../constants/api";
+import { API_URL, authFetch } from "../../constants/api";
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -51,7 +51,7 @@ const Favorites = () => {
     };
     const fetchFavoriteItems = async (userId) => {
         try {
-            const response = await fetch(
+            const response = await authFetch(
                 `${API_URL}/userItems/user/${userId}`
             );
             if (!response.ok) {
@@ -70,7 +70,7 @@ const Favorites = () => {
         const updatedFavorites = await Promise.all(
             favorites.map(async (item) => {
                 try {
-                    const response = await fetch(
+                    const response = await authFetch(
                         `${API_URL}/items/${item.itemId}`
                     );
                     if (!response.ok) {
@@ -136,7 +136,7 @@ const Favorites = () => {
   };
   const handleFavoriteToggle = async (itemId) => { // itemId here = the userItem id
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `${API_URL}/userItems/${itemId}`,
         {
           method: "PATCH",

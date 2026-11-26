@@ -1,4 +1,4 @@
-import { API_URL } from "../../constants/api";
+import { API_URL, authFetch, clearLogin } from "../../constants/api";
 import React, { useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
@@ -113,7 +113,7 @@ const Index = () => {
       const updatedItems = await Promise.all(
         items.map(async (item) => {
           try {
-              const response = await fetch(
+              const response = await authFetch(
                 `${API_URL}/items/${item.itemId}`
               );
               const itemDetails = await response.json();
@@ -151,8 +151,7 @@ const Index = () => {
 
   const handleLogout = async () => {
     try {
-      await AsyncStorage.removeItem("userId");
-      await AsyncStorage.removeItem("username");
+      await clearLogin(); // forget the token, user id and username
       setIsUserModalVisible(false);
       router.push("/logIn");
     } catch (error) {
@@ -201,7 +200,7 @@ const Index = () => {
     const newQuantity = Math.max(0, (item.quantity || 0) + change);
     if (newQuantity === item.quantity) return; // already at 0
     try {
-      const response = await fetch(`${API_URL}/userItems/${item.userItemId}`, {
+      const response = await authFetch(`${API_URL}/userItems/${item.userItemId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ quantity: newQuantity }),
@@ -242,7 +241,7 @@ const Index = () => {
     if (!confirmed) return;
 
     try {
-      const response = await fetch(`${API_URL}/userItems/${item.userItemId}`, {
+      const response = await authFetch(`${API_URL}/userItems/${item.userItemId}`, {
         method: "DELETE",
       });
       if (!response.ok) {

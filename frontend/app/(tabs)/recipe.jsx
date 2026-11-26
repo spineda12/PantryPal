@@ -1,4 +1,4 @@
-import { API_URL } from "../../constants/api";
+import { API_URL, authFetch } from "../../constants/api";
 import React, { useEffect, useState } from "react";
 import {
   View,
@@ -46,7 +46,7 @@ const Recipe = () => {
     };
     const fetchItems = async (userId) => {
       try {
-        const response = await fetch(
+        const response = await authFetch(
           `${API_URL}/userItems/user/${userId}`
         );
         if (!response.ok) {
@@ -65,7 +65,7 @@ const Recipe = () => {
       const updatedItems = await Promise.all(
         items.map(async (item) => {
           try {
-            const response = await fetch(
+            const response = await authFetch(
               `${API_URL}/items/${item.itemId}`
             );
             if (!response.ok) {

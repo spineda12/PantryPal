@@ -1,4 +1,4 @@
-import { API_URL } from "../constants/api";
+import { API_URL, authFetch } from "../constants/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export const usePantry = () => {
@@ -21,7 +21,7 @@ export const usePantry = () => {
         throw new Error("No user ID found");
       }
 
-      const userItemsResponse = await fetch(
+      const userItemsResponse = await authFetch(
         `${API_URL}/userItems/user/${userId}`
       );
       const userItems = await userItemsResponse.json();
@@ -38,7 +38,7 @@ export const usePantry = () => {
       const userId = await getUserId();
       if (!userId) throw new Error("No user ID found");
 
-      const userItemsResponse = await fetch(
+      const userItemsResponse = await authFetch(
         `${API_URL}/userItems/user/${userId}`
       );
       const userItems = await userItemsResponse.json();
@@ -46,13 +46,13 @@ export const usePantry = () => {
 
       let response;
       if (existingUserItem) {
-        response = await fetch(`${API_URL}/userItems/${existingUserItem.id}`, {
+        response = await authFetch(`${API_URL}/userItems/${existingUserItem.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ isFavorite: newStatus }),
         });
       } else {
-        response = await fetch(`${API_URL}/userItems`, {
+        response = await authFetch(`${API_URL}/userItems`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -76,7 +76,7 @@ export const usePantry = () => {
       const userId = await getUserId();
       if (!userId) throw new Error("No user ID found");
   
-      const response = await fetch(`${API_URL}/items`, {
+      const response = await authFetch(`${API_URL}/items`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -95,7 +95,7 @@ export const usePantry = () => {
       const newItem = await response.json();
       
       // Create user-item association
-      const userItemResponse = await fetch(`${API_URL}/userItems`, {
+      const userItemResponse = await authFetch(`${API_URL}/userItems`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

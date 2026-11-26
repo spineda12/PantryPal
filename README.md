@@ -61,13 +61,16 @@ To use a real phone with Expo Go, your phone can't reach `localhost` on your com
 
 ## API overview
 
+Only sign up, log in and `/hello` are public. Every other request needs the token from log in, sent as a header: `Authorization: Bearer <token>`. Tokens last 7 days. The app does this for you in `authFetch` (`frontend/constants/api.js`).
+
 | Endpoint | What it does |
 | --- | --- |
 | `POST /api/auth/register` | Create an account (`name`, `username`, `password`) |
-| `POST /api/auth/login` | Log in; returns the user's id as plain text |
+| `POST /api/auth/login` | Log in; returns `{ token, userId, username }` |
+| `GET /api/auth/me` | The logged-in user's profile |
 | `GET/POST /items`, `GET/PUT/PATCH/DELETE /items/{id}` | Food items (name, category, image URL) |
-| `GET /userItems/user/{userId}` | Everything in one user's pantry |
-| `POST /userItems`, `PATCH/PUT/DELETE /userItems/{id}` | A user's copy of an item: `quantity`, `unit`, `expirationDate`, `isFavorite` |
+| `GET /userItems`, `GET /userItems/user/{userId}` | Everything in your pantry (another user's id returns 403) |
+| `POST /userItems`, `GET/PATCH/PUT/DELETE /userItems/{id}` | Your copy of an item: `quantity`, `unit`, `expirationDate`, `isFavorite`. Only your own items. |
 
 ## Changes from the class version
 

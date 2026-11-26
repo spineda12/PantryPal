@@ -3,23 +3,23 @@
 import { useEffect } from "react";
 import { View, ActivityIndicator } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { saveLogin } from "../constants/api";
 
 export default function OAuthCallback() {
-  const { userId } = useLocalSearchParams();
+  const { token, userId, username } = useLocalSearchParams();
   const router = useRouter();
 
   useEffect(() => {
     const finish = async () => {
-      if (userId) {
-        await AsyncStorage.setItem("userId", String(userId));
+      if (token && userId) {
+        await saveLogin({ token, userId, username });
         router.replace("/(tabs)");
       } else {
         router.replace("/logIn");
       }
     };
     finish();
-  }, [userId]);
+  }, [token, userId]);
 
   return (
     <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#524242" }}>

@@ -1,4 +1,4 @@
-import { API_URL } from "../../constants/api";
+import { API_URL, authFetch } from "../../constants/api";
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -51,7 +51,7 @@ const Restock = () => {
     };
     const fetchLowItems = async (userId) => {
       try {
-        const response = await fetch(
+        const response = await authFetch(
           `${API_URL}/userItems/user/${userId}`
         );
         if (!response.ok) {
@@ -70,7 +70,7 @@ const Restock = () => {
       const updatedLowItems = await Promise.all(
         lowItems.map(async (item) => {
           try {
-            const response = await fetch(
+            const response = await authFetch(
               `${API_URL}/items/${item.itemId}`
             );
             if (!response.ok) {
@@ -145,7 +145,7 @@ const Restock = () => {
       const updatedQuantity = Math.max(0, (currentItem.quantity || 0) + change);
       if (updatedQuantity === currentItem.quantity) return; // already at 0
 
-      const updateResponse = await fetch(`${API_URL}/userItems/${itemId}`, {
+      const updateResponse = await authFetch(`${API_URL}/userItems/${itemId}`, {
         method: "PATCH",
         body: JSON.stringify({ quantity: updatedQuantity }),
         headers: {
@@ -182,7 +182,7 @@ const Restock = () => {
 
       const updatedFavorite = !currentItem.isFavorite;
 
-      const response = await fetch(`${API_URL}/userItems/${itemId}`, {
+      const response = await authFetch(`${API_URL}/userItems/${itemId}`, {
         method: "PATCH",
         body: JSON.stringify({ isFavorite: updatedFavorite }),
         headers: {
