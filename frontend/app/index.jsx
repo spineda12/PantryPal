@@ -1,8 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
 import { Text, View, StyleSheet, ImageBackground, Pressable, Dimensions } from "react-native";
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { useFonts } from 'expo-font';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width } = Dimensions.get('window');
 const isMobile = width < 600;
@@ -12,6 +13,25 @@ const Index = () => {
     'Montaga': require('../assets/fonts/Montaga-Regular.ttf'),
   });
 
+  const router = useRouter();
+  // true while we check for a saved login, so the welcome page doesn't flash
+  const [checkingLogin, setCheckingLogin] = useState(true);
+
+  // Already logged in (e.g. after reloading the page)? Go straight to the pantry.
+  // If the saved token has expired, the pantry's first request gets a 401 and
+  // authFetch sends the user to the login screen.
+  useEffect(() => {
+    const checkLogin = async () => {
+      const token = await AsyncStorage.getItem('token');
+      if (token) {
+        router.replace('/(tabs)');
+      } else {
+        setCheckingLogin(false);
+      }
+    };
+    checkLogin();
+  }, []);
+
   useEffect(() => {
     SplashScreen.preventAutoHideAsync();
     if (fontsLoaded) {
@@ -19,7 +39,7 @@ const Index = () => {
     }
   }, [fontsLoaded]);
 
-  if (!fontsLoaded) {
+  if (!fontsLoaded || checkingLogin) {
     return null;
   }
 
